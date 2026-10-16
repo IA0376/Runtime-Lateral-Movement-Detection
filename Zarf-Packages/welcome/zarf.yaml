@@ -1,0 +1,10 @@
+kind: ZarfPackageConfig
+metadata: {name: welcome, version: 1.0.0, architecture: amd64}
+components:
+  - name: welcome
+    required: true
+    charts:
+      - name: welcome
+        namespace: welcome
+        version: 1.0.0
+        localPath: chart

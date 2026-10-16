@@ -1,0 +1,4 @@
+# Optional arbitrary Talos patch. Remove this file from patches.common if unused.
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+workloadIsolation: true

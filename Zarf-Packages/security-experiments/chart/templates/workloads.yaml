@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: attacker, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: attacker}}
+  template:
+    metadata:
+      annotations:
+        kubearmor-policy: enabled
+        kubearmor-visibility: "process,file"
+        checksum/scripts: {{ include (print $.Template.BasePath "/scripts.yaml") . | sha256sum }}
+      labels: {app: attacker, security.test.workload/experiment: "true", security.test.workload/component: attacker}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      serviceAccountName: experiment-attacker
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+      - name: attacker
+        image: {{ .Values.attackerImage }}
+        command: ["sh","-c","cp /scripts/scenario3 /experiment/scenario3; cp /scripts/scenario4 /experiment/scenario4; chmod +x /experiment/*; sleep infinity"]
+        securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}
+        volumeMounts: [{name: scripts, mountPath: /scripts}, {name: work, mountPath: /experiment}]
+      volumes: [{name: scripts, configMap: {name: experiment-scripts, defaultMode: 365}}, {name: work, emptyDir: {}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: frontend, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: frontend}}
+  template:
+    metadata: {annotations: {kubearmor-policy: enabled, kubearmor-visibility: "process,file"}, labels: {app: frontend, security.test.workload/experiment: "true", security.test.workload/component: frontend}}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+      - {name: frontend, image: {{ .Values.attackerImage }}, command: ["sleep", "infinity"], securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: backend, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: backend}}
+  template:
+    metadata: {annotations: {kubearmor-policy: enabled, kubearmor-visibility: "process,file"}, labels: {app: backend, security.test.workload/experiment: "true", security.test.workload/component: backend}}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+      - {name: backend, image: {{ .Values.echoImage }}, args: ["-listen=:8080","-text=ok"], securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: backend, namespace: {{ .Release.Namespace }}}
+spec: {selector: {app: backend}, ports: [{port: 8080, targetPort: 8080}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: victim-a, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: victim-a}}
+  template:
+    metadata: {annotations: {kubearmor-policy: enabled, kubearmor-visibility: "process,file"}, labels: {app: victim-a, security.test.workload/experiment: "true", security.test.workload/component: victim-a}}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers: [{name: app, image: {{ .Values.echoImage }}, args: ["-listen=:8080","-text=victim-a"], securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: victim-a, namespace: {{ .Release.Namespace }}}
+spec: {selector: {app: victim-a}, ports: [{port: 8080, targetPort: 8080}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: victim-b, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: victim-b}}
+  template:
+    metadata: {annotations: {kubearmor-policy: enabled, kubearmor-visibility: "process,file"}, labels: {app: victim-b, security.test.workload/experiment: "true", security.test.workload/component: victim-b}}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers: [{name: app, image: {{ .Values.echoImage }}, args: ["-listen=:8080","-text=victim-b"], securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: victim-b, namespace: {{ .Release.Namespace }}}
+spec: {selector: {app: victim-b}, ports: [{port: 8080, targetPort: 8080}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: database, namespace: {{ .Release.Namespace }}}
+spec: {selector: {app: victim-b}, ports: [{port: 5432, targetPort: 8080}]}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: authorized-client, namespace: {{ .Release.Namespace }}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: authorized-client}}
+  template:
+    metadata:
+      annotations:
+        kubearmor-policy: enabled
+        kubearmor-visibility: "process,file"
+        checksum/scripts: {{ include (print $.Template.BasePath "/scripts.yaml") . | sha256sum }}
+      labels: {app: authorized-client, security.test.workload/experiment: "true", security.test.workload/component: authorized-client}
+    spec:
+      nodeSelector:
+        security-experiments.io/target: "true"
+      serviceAccountName: experiment-reader
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+      - name: authorized-client
+        image: {{ .Values.attackerImage }}
+        command: ["sh","-c","cp /scripts/scenario3 /experiment/scenario3; cp /scripts/scenario4 /experiment/scenario4; chmod +x /experiment/*; sleep infinity"]
+        securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}
+        volumeMounts: [{name: scripts, mountPath: /scripts}, {name: work, mountPath: /experiment}]
+      volumes: [{name: scripts, configMap: {name: experiment-scripts, defaultMode: 365}}, {name: work, emptyDir: {}}]

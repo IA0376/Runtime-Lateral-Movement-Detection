@@ -1,0 +1,28 @@
+kind: ZarfPackageConfig
+metadata:
+    name: falco
+    version: 1.0.0
+components:
+    - name: falco-prerequisites
+      required: true
+      manifests:
+        - name: falco-namespace-security-appset
+          namespace: falco
+          files:
+            - manifests/falco-namespace-security.yaml
+    - name: falco
+      required: true
+      charts:
+        - name: falco
+          namespace: falco
+          url: https://falcosecurity.github.io/charts
+          repoName: falco
+          version: 9.1.0
+          valuesFiles:
+            - values/falco-input-values.yaml
+            - values/falco-values.yaml
+    - name: falco-images
+      required: false
+      images:
+        - docker.io/falcosecurity/falco:0.44.1
+        - index.docker.io/falcosecurity/falco:sha256-d0cfe422d6ac0e0f20857798f46c7d7273210e1b064b22821e4e6e7f843cde6b.sig

@@ -1,0 +1,21 @@
+kind: ZarfPackageConfig
+metadata:
+  name: tracee
+  version: 1.0.0
+  architecture: amd64
+components:
+  - name: tracee-namespace
+    required: true
+    manifests:
+      - name: namespace
+        files: [manifests/namespace.yaml]
+  - name: tracee
+    required: true
+    charts:
+      - name: tracee
+        namespace: tracee
+        version: 0.24.1
+        localPath: chart
+        valuesFiles: [values.yaml]
+    images:
+      - docker.io/aquasec/tracee:0.24.1@sha256:cfbbfee972e64a644f6b1bac74ee26998e6e12442697be4c797ae563553a2a5b

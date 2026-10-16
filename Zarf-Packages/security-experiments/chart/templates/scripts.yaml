@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: experiment-scripts, namespace: {{ .Release.Namespace }}}
+data:
+  scenario3: |
+    #!/bin/sh
+    set -eu
+    T=/var/run/secrets/kubernetes.io/serviceaccount/token
+    C=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    TOKEN="$(cat "$T")"
+    curl --fail --max-time 10 --cacert "$C" -H "Authorization: Bearer $TOKEN" "https://kubernetes.default.svc/api/v1/namespaces/{{ .Release.Namespace }}/pods?limit=50" >/tmp/api-pods.json
+  scenario4: |
+    #!/bin/sh
+    set -eu
+    T=/var/run/secrets/kubernetes.io/serviceaccount/token
+    C=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    TOKEN="$(cat "$T")"
+    cat >/tmp/rogue.json <<'JSON'
+    {"apiVersion":"v1","kind":"Pod","metadata":{"name":"rogue-test","labels":{"security.test.workload/experiment":"true"}},"spec":{"nodeSelector":{"security-experiments.io/target":"true"},"restartPolicy":"Never","securityContext":{"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"test","image":"{{ .Values.attackerImage }}","command":["sh","-c","echo controlled-experiment; sleep 20"],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}}]}}
+    JSON
+    HTTP_CODE="$(curl --silent --show-error --cacert "$C" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -X POST --data-binary @/tmp/rogue.json --output /tmp/rogue-response.json --write-out '%{http_code}' "https://kubernetes.default.svc/api/v1/namespaces/{{ .Release.Namespace }}/pods")"
+    printf '%s\n' "$HTTP_CODE" >/tmp/rogue-status
+    printf '%s\n' "$HTTP_CODE"
+    test "$HTTP_CODE" = 201

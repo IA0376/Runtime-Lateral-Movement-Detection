@@ -1,0 +1,52 @@
+{{- if .Values.fanoutEnabled }}
+{{- range $i := until 24 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fanout{{ printf "%02d" $i }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: fanout{{ printf "%02d" $i }}}
+  template:
+    metadata:
+      labels: {app: fanout{{ printf "%02d" $i }}, security.test.workload/experiment: "true", security.test.workload/component: fanout{{ printf "%02d" $i }}, security.test.workload/fanout: "true"}
+    spec:
+      nodeSelector: {security-experiments.io/target: "true"}
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: echo
+          image: {{ $.Values.echoImage }}
+          args: ["-listen=:8080", "-text=ok"]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+          readinessProbe:
+            httpGet: {path: /health, port: 8080}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fanout{{ printf "%02d" $i }}
+spec:
+  selector: {app: fanout{{ printf "%02d" $i }}}
+  ports: [{port: 8080, targetPort: 8080}]
+{{- end }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: experiment-fanout-intent
+spec:
+  endpointSelector:
+    matchLabels: {app: attacker}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            security.test.workload/fanout: "true"
+      toPorts:
+        - ports: [{port: "8080", protocol: TCP}]
+{{- end }}

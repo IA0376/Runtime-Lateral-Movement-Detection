@@ -1,0 +1,51 @@
+gitea:
+  admin:
+    existingSecret: gitea-admin
+  config:
+    repository:
+      DEFAULT_PRIVATE: private
+    database:
+      DB_TYPE: postgres
+      HOST: gitea-postgresql:5432
+    server:
+      DOMAIN: gitea.cluster.lab
+      ROOT_URL: https://gitea.cluster.lab/
+      SSH_DOMAIN: gitea.cluster.lab
+    service:
+      DISABLE_REGISTRATION: true
+persistence:
+  accessModes:
+    - ReadWriteOnce
+  enabled: true
+  size: 20Gi
+  storageClass: longhorn
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      accessModes:
+        - ReadWriteOnce
+      enabled: true
+      size: 20Gi
+      storageClass: longhorn
+    nodeSelector:
+      kubernetes.io/hostname: cp-node-02
+postgresql-ha:
+  enabled: false
+service:
+  http:
+    port: 3000
+    type: ClusterIP
+  ssh:
+    port: 22
+    type: ClusterIP
+ingress:
+  enabled: false
+clusterDomain: cluster.lab
+valkey-cluster:
+  clusterDomain: cluster.lab
+  valkey:
+    nodeSelector:
+      kubernetes.io/hostname: cp-node-02
+nodeSelector:
+  kubernetes.io/hostname: cp-node-02

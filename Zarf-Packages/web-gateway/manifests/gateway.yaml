@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web-gateway
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: web-gateway
+  namespace: web-gateway
+spec:
+  secretName: web-gateway-tls
+  dnsNames: ["*.cluster.lab"]
+  issuerRef: {name: lab-ca, kind: ClusterIssuer}
+---
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: web-gateway
+spec:
+  blocks:
+    - cidr: "###ZARF_VAR_GATEWAY_IP###/32"
+  serviceSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: web
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: web-gateway
+spec:
+  serviceSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: web
+  interfaces: ["^enp(2|44)s0$"]
+  externalIPs: false
+  loadBalancerIPs: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web
+  namespace: web-gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      hostname: "*.cluster.lab"
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs: [{name: web-gateway-tls}]
+      allowedRoutes:
+        namespaces: {from: All}

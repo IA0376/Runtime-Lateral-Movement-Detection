@@ -1,0 +1,161 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gitea-bootstrap
+  namespace: gitea
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 10
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gitea-bootstrap
+
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: bootstrap
+          image: curlimages/curl:8.16.0
+
+          env:
+            - name: GITEA_URL
+              value: http://gitea-http:3000
+
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-admin
+                  key: username
+
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-admin
+                  key: password
+
+            - name: ARGOCD_USERNAME
+              value: "###ZARF_VAR_GITEA_ARGOCD_USERNAME###"
+
+            - name: ARGOCD_PASSWORD
+              value: "###ZARF_VAR_GITEA_ARGOCD_PASSWORD###"
+
+            - name: GITEA_ORGANIZATION
+              value: infrastructure
+
+            - name: GITEA_REPOSITORY
+              value: infrastructure
+
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              echo "Waiting for Gitea..."
+
+              until curl \
+                --fail \
+                --silent \
+                "${GITEA_URL}/api/v1/version" >/dev/null
+              do
+                sleep 5
+              done
+
+              echo "Gitea is available."
+
+              AUTH="${ADMIN_USERNAME}:${ADMIN_PASSWORD}"
+              # Argo CD service user
+              if curl \
+                --silent \
+                --fail \
+                --user "${AUTH}" \
+                "${GITEA_URL}/api/v1/users/${ARGOCD_USERNAME}" \
+                >/dev/null 2>&1
+              then
+                echo "User ${ARGOCD_USERNAME} already exists."
+              else
+                echo "Creating Argo CD service user..."
+
+                curl \
+                  --fail-with-body \
+                  --user "${AUTH}" \
+                  --header "Content-Type: application/json" \
+                  --request POST \
+                  --data "{
+                    \"username\": \"${ARGOCD_USERNAME}\",
+                    \"login_name\": \"${ARGOCD_USERNAME}\",
+                    \"password\": \"${ARGOCD_PASSWORD}\",
+                    \"email\": \"argocd@cluster.lab\",
+                    \"must_change_password\": false,
+                    \"send_notify\": false
+                  }" \
+                  "${GITEA_URL}/api/v1/admin/users"
+              fi
+              # infrastructure organization
+              if curl \
+                --silent \
+                --fail \
+                --user "${AUTH}" \
+                "${GITEA_URL}/api/v1/orgs/${GITEA_ORGANIZATION}" \
+                >/dev/null 2>&1
+              then
+                echo "Organization ${GITEA_ORGANIZATION} already exists."
+              else
+                echo "Creating organization ${GITEA_ORGANIZATION}..."
+
+                curl \
+                  --fail-with-body \
+                  --user "${AUTH}" \
+                  --header "Content-Type: application/json" \
+                  --request POST \
+                  --data "{
+                    \"username\": \"${GITEA_ORGANIZATION}\",
+                    \"full_name\": \"Infrastructure\",
+                    \"description\": \"Infrastructure GitOps repositories\",
+                    \"visibility\": \"private\"
+                  }" \
+                  "${GITEA_URL}/api/v1/admin/users/${ADMIN_USERNAME}/orgs"
+              fi
+              # infrastructure repository
+              if curl \
+                --silent \
+                --fail \
+                --user "${AUTH}" \
+                "${GITEA_URL}/api/v1/repos/${GITEA_ORGANIZATION}/${GITEA_REPOSITORY}" \
+                >/dev/null 2>&1
+              then
+                echo "Repository already exists."
+              else
+                echo "Creating infrastructure repository..."
+
+                curl \
+                  --fail-with-body \
+                  --user "${AUTH}" \
+                  --header "Content-Type: application/json" \
+                  --request POST \
+                  --data "{
+                    \"name\": \"${GITEA_REPOSITORY}\",
+                    \"description\": \"Infrastructure GitOps root repository\",
+                    \"private\": true,
+                    \"auto_init\": true,
+                    \"default_branch\": \"main\"
+                  }" \
+                  "${GITEA_URL}/api/v1/orgs/${GITEA_ORGANIZATION}/repos"
+              fi
+              # Give Argo CD read access
+              echo "Granting Argo CD read access..."
+
+              curl \
+                --fail-with-body \
+                --user "${AUTH}" \
+                --header "Content-Type: application/json" \
+                --request PUT \
+                --data '{
+                  "permission": "read"
+                }' \
+                "${GITEA_URL}/api/v1/repos/${GITEA_ORGANIZATION}/${GITEA_REPOSITORY}/collaborators/${ARGOCD_USERNAME}"
+
+              echo
+              echo "Gitea bootstrap completed."

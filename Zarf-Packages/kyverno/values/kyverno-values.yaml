@@ -1,0 +1,42 @@
+admissionController:
+  container:
+    image:
+      defaultRegistry: gitea.lab.internal/talos
+      repository: kyverno/kyverno
+  initContainer:
+    image:
+      defaultRegistry: gitea.lab.internal/talos
+      repository: kyverno/kyvernopre
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-03
+backgroundController:
+  image:
+    defaultRegistry: gitea.lab.internal/talos
+    repository: kyverno/background-controller
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-03
+cleanupController:
+  image:
+    defaultRegistry: gitea.lab.internal/talos
+    repository: kyverno/cleanup-controller
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-03
+crds:
+  migration:
+    image:
+      defaultRegistry: gitea.lab.internal/talos
+      repository: kyverno/kyverno-cli
+reportsController:
+  image:
+    defaultRegistry: gitea.lab.internal/talos
+    repository: kyverno/reports-controller
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-03
+test:
+  image:
+    registry: gitea.lab.internal/talos
+    repository: kyverno/readiness-checker
+webhooksCleanup:
+  image:
+    registry: gitea.lab.internal/talos
+    repository: kyverno/readiness-checker

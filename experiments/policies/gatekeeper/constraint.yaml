@@ -1,0 +1,7 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sExperimentLabel
+metadata: {name: require-experiment-label}
+spec:
+  match:
+    kinds: [{apiGroups: [""], kinds: [Pod]}]
+    namespaces: [security-test-helm, security-test-gitops]

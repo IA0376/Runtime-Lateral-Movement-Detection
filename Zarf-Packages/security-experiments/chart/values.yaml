@@ -1,0 +1,7 @@
+attackerImage: gitea.lab.internal/talos/attack_container:1.0.0
+echoImage: gitea.lab.internal/talos/hashicorp/http-echo:1.0
+
+fanoutEnabled: true
+
+# Reused image supplies kubectl
+readinessImage: gitea.lab.internal/talos/library/lab-portal@sha256:8728db8cdde286403619b9661005e6dba91017f59c378e33d8a0a8ee8f74795f

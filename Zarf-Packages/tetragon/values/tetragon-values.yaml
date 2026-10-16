@@ -1,0 +1,3 @@
+"tetragonOperator":
+  "nodeSelector":
+    "kubernetes.io/hostname": "cp-node-03"

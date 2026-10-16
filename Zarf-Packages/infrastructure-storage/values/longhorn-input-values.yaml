@@ -1,0 +1,31 @@
+defaultSettings:
+  createDefaultDiskLabeledNodes: true
+  # Longhorn V2 / SPDK
+  v1DataEngine: false
+  v2DataEngine: true
+  dataEngineHugepageEnabled: '{"v2":"true"}'
+  dataEngineMemorySize: '{"v2":"2048"}'
+  # Prevent SPDK from continuously busy-polling CPUs.
+  # Particularly important for the Minisforum nodes to avoid
+  # unnecessary CPU usage, heat and fan noise while idle.
+  dataEngineInterruptModeEnabled: '{"v2":"true"}'
+  defaultReplicaCount: 3
+  logPath: /var/mnt/longhorn-logs
+  storageMinimalAvailablePercentage: 10
+  storageOverProvisioningPercentage: 100
+  storageReservedPercentageForDefaultDisk: 0
+persistence:
+  createStorageClass: true
+  dataEngine: v2
+  defaultClass: true
+  defaultClassReplicaCount: 3
+  defaultFsType: ext4
+service:
+  ui:
+    type: ClusterIP
+longhornUI:
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02
+longhornDriver:
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02

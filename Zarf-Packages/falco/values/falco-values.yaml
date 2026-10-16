@@ -1,0 +1,11 @@
+# driver:
+#     loader:
+#         initContainer:
+#             image:
+#                 registry: gitea.cluster.lab/talos
+# falcoctl:
+#     image:
+#         registry: gitea.cluster.lab/talos
+# image:
+#     registry: gitea.cluster.lab/talos
+#     repository: gitea.cluster.lab/talos/falcosecurity/falco

@@ -1,0 +1,25 @@
+{{- if and .Values.pool.name .Values.pool.cidr .Values.pool.serviceName .Values.pool.namespace }}
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: {{ .Values.pool.name | quote }}
+spec:
+  blocks:
+    - cidr: {{ .Values.pool.cidr | quote }}
+  serviceSelector:
+    matchLabels:
+      io.kubernetes.service.namespace: {{ .Values.pool.namespace | quote }}
+      io.kubernetes.service.name: {{ .Values.pool.serviceName | quote }}
+{{- end }}
+---
+{{- if .Values.l2Announcement.enabled }}
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: {{ .Values.l2Announcement.name | quote }}
+spec:
+  interfaces:
+    - {{ .Values.l2Announcement.interface | quote }}
+  externalIPs: true
+  loadBalancerIPs: true
+{{- end }}

@@ -1,0 +1,48 @@
+{{- if .Values.jetson.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: welcome-jetson}
+data:
+  config.json: {{ .Values.jetson | toJson | quote }}
+  annotate.sh: |
+{{ .Files.Get "files/annotate.sh" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: welcome-jetson}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      labels: {app: welcome-jetson}
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 14400
+      template:
+        metadata:
+          labels: {app: welcome-jetson}
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          nodeSelector: {kubernetes.io/hostname: cp-node-02}
+          securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+          containers:
+            - name: annotate
+              image: {{ .Values.image | quote }}
+              command: [bash, /jetson/annotate.sh]
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              resources:
+                requests: {cpu: 25m, memory: 64Mi}
+                limits: {cpu: 500m, memory: 256Mi}
+              volumeMounts:
+                - {name: data, mountPath: /data}
+                - {name: jetson, mountPath: /jetson, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - {name: data, persistentVolumeClaim: {claimName: welcome-results}}
+            - {name: jetson, configMap: {name: welcome-jetson}}
+            - {name: tmp, emptyDir: {}}
+{{- end }}

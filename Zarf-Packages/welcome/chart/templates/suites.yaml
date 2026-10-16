@@ -1,0 +1,46 @@
+{{- range $kind := list "normal" "extended" }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: welcome-suite-{{ $kind }}}
+spec:
+  suspend: true
+  schedule: "0 0 1 1 *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      labels: {app: lab-test, lab/test: "security-{{ $kind }}"}
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1800
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels: {app: lab-test}
+        spec:
+          serviceAccountName: lab-test-runner
+          restartPolicy: Never
+          nodeSelector: {kubernetes.io/hostname: cp-node-02}
+          securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+          tolerations:
+            - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+          containers:
+            - name: test
+              image: {{ $.Values.image | quote }}
+              command: [lab-platform, run-test, {{ if eq $kind "normal" }}security{{ else }}security-extended{{ end }}]
+              env:
+                - {name: HOME, value: /tmp/home}
+                - {name: LAB_PORTAL_IMAGE, value: {{ $.Values.image | quote }}}
+                - name: JOB_NAME
+                  valueFrom: {fieldRef: {fieldPath: "metadata.labels['job-name']"}}
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "2", memory: 2Gi}}
+              volumeMounts:
+                - {name: data, mountPath: /data}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - {name: data, persistentVolumeClaim: {claimName: welcome-results}}
+            - {name: tmp, emptyDir: {}}
+{{- end }}

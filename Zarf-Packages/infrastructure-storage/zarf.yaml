@@ -1,0 +1,46 @@
+kind: ZarfPackageConfig
+metadata:
+    name: infrastructure-storage
+    version: 1.0.0
+components:
+    - name: infrastructure-storage-namespace-security
+      required: true
+      manifests:
+        - name: longhorn-namespace-security-appset
+          namespace: longhorn-system
+          files:
+            - manifests/longhorn-namespace-security.yaml
+    - name: infrastructure-storage
+      required: true
+      charts:
+        - name: longhorn
+          namespace: longhorn-system
+          url: https://charts.longhorn.io
+          repoName: longhorn
+          version: 1.12.1
+          noWait: true
+          valuesFiles:
+            - values/longhorn-input-values.yaml
+            - values/longhorn-values.yaml
+        - name: longhorn-load-balancer-pool
+          namespace: longhorn-system
+          localPath: charts/cilium-load-balancer-pool
+          version: 0.1.0
+          valuesFiles:
+            - values/external-ip-pool-values.yaml
+    - name: infrastructure-storage-images
+      required: false
+      images:
+        - docker.io/longhornio/longhorn-manager:v1.12.1
+        - docker.io/longhornio/longhorn-share-manager:v1.12.1
+        - docker.io/longhornio/longhorn-ui:v1.12.1
+        - docker.io/longhornio/backing-image-manager:v1.12.1
+        - docker.io/longhornio/csi-attacher:v4.12.0
+        - docker.io/longhornio/csi-node-driver-registrar:v2.17.0
+        - docker.io/longhornio/csi-provisioner:v5.3.0
+        - docker.io/longhornio/csi-resizer:v2.2.1
+        - docker.io/longhornio/csi-snapshotter:v8.6.0
+        - docker.io/longhornio/livenessprobe:v2.19.0
+        - docker.io/longhornio/longhorn-engine:v1.12.1
+        - docker.io/longhornio/longhorn-instance-manager:v1.12.1
+        - docker.io/longhornio/support-bundle-kit:v0.0.92

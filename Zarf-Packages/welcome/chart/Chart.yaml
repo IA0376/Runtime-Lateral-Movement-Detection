@@ -1,0 +1,12 @@
+{
+  "apiVersion": "v2",
+  "dependencies": [
+    {
+      "name": "web-access",
+      "repository": "",
+      "version": "0.1.0"
+    }
+  ],
+  "name": "welcome-application",
+  "version": "1.0.0"
+}

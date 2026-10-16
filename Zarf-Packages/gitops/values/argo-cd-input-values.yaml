@@ -1,0 +1,21 @@
+dex:
+  enabled: false
+applicationSet:
+  enabled: true
+configs:
+  params:
+    server.insecure: true
+  secret:
+    createSecret: true
+    argocdServerAdminPassword: '###ZARF_VAR_ARGOCD_ADMIN_PASSWORD_HASH###'
+global:
+  domain: argocd.cluster.lab
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02
+redis:
+  enabled: true
+server:
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false

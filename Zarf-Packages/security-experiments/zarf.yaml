@@ -1,0 +1,19 @@
+kind: ZarfPackageConfig
+metadata:
+  name: security-experiments
+  version: 1.0.0
+  architecture: amd64
+  description: Experiment workloads, fan-out fixtures and package-owned sensor readiness
+components:
+  - name: experiment-namespace
+    required: true
+    manifests:
+      - name: namespace
+        files: [manifests/namespace.yaml]
+  - name: experiment-workloads
+    required: true
+    charts:
+      - name: security-experiment
+        namespace: security-test-helm
+        version: 0.1.0
+        localPath: chart

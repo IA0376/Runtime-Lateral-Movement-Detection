@@ -1,0 +1,9 @@
+pool:
+  name: ""
+  cidr: ""
+  serviceName: ""
+  namespace: ""
+l2Announcement:
+  enabled: false
+  name: ""
+  interface: ""

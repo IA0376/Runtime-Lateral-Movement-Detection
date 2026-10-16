@@ -1,0 +1,411 @@
+{
+  "apiVersion": "v1",
+  "kind": "ServiceAccount",
+  "metadata": {
+    "name": "lab-test-runner",
+    "namespace": "welcome"
+  }
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "ClusterRole",
+  "metadata": {
+    "name": "lab-test-status"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "nodes",
+        "namespaces",
+        "pods",
+        "services",
+        "configmaps"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apps"
+      ],
+      "resources": [
+        "deployments",
+        "statefulsets",
+        "daemonsets",
+        "replicasets"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "argoproj.io"
+      ],
+      "resources": [
+        "applications"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "external-secrets.io"
+      ],
+      "resources": [
+        "externalsecrets",
+        "secretstores",
+        "clustersecretstores"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "gateway.networking.k8s.io"
+      ],
+      "resources": [
+        "gateways",
+        "httproutes"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "metrics.k8s.io"
+      ],
+      "resources": [
+        "pods"
+      ],
+      "verbs": [
+        "get",
+        "list"
+      ]
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "ClusterRoleBinding",
+  "metadata": {
+    "name": "lab-test-status"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "ClusterRole",
+    "name": "lab-test-status"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "lab-test-runner",
+      "namespace": "welcome"
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "lab-test-experiments",
+    "namespace": "security-test-helm"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods/exec"
+      ],
+      "verbs": [
+        "create"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods"
+      ],
+      "resourceNames": [
+        "rogue-test"
+      ],
+      "verbs": [
+        "delete"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "secrets"
+      ],
+      "verbs": [
+        "get",
+        "list"
+      ]
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "name": "lab-test-experiments",
+    "namespace": "security-test-helm"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "lab-test-experiments"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "lab-test-runner",
+      "namespace": "welcome"
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "lab-test-experiments",
+    "namespace": "security-test-gitops"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods/exec"
+      ],
+      "verbs": [
+        "create"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods"
+      ],
+      "resourceNames": [
+        "rogue-test"
+      ],
+      "verbs": [
+        "delete"
+      ]
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "name": "lab-test-experiments",
+    "namespace": "security-test-gitops"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "lab-test-experiments"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "lab-test-runner",
+      "namespace": "welcome"
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "lab-test-telemetry",
+    "namespace": "kube-system"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods/log"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods/portforward"
+      ],
+      "verbs": [
+        "create"
+      ]
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "name": "lab-test-telemetry",
+    "namespace": "kube-system"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "lab-test-telemetry"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "lab-test-runner",
+      "namespace": "welcome"
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "lab-test-telemetry",
+    "namespace": "falco"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods/log"
+      ],
+      "verbs": [
+        "get"
+      ]
+    }
+  ]
+}
+---
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "name": "lab-test-telemetry",
+    "namespace": "falco"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "lab-test-telemetry"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "lab-test-runner",
+      "namespace": "welcome"
+    }
+  ]
+}
+{{- range list "tracee" "kubearmor" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: lab-test-telemetry
+  namespace: {{ . }}
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: lab-test-telemetry
+  namespace: {{ . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: lab-test-telemetry
+subjects:
+  - kind: ServiceAccount
+    name: lab-test-runner
+    namespace: welcome
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: lab-test-policy-evidence
+rules:
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get, list]
+  - apiGroups: [cilium.io]
+    resources: [ciliumnetworkpolicies, tracingpolicies]
+    verbs: [get, list]
+  - apiGroups: [kyverno.io]
+    resources: [clusterpolicies]
+    verbs: [get, list]
+  - apiGroups: [templates.gatekeeper.sh]
+    resources: [constrainttemplates]
+    verbs: [get, list]
+  - apiGroups: [constraints.gatekeeper.sh]
+    resources: ['*']
+    verbs: [get, list]
+  - apiGroups: [security.kubearmor.com]
+    resources: [kubearmorpolicies]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: lab-test-policy-evidence
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: lab-test-policy-evidence
+subjects:
+  - kind: ServiceAccount
+    name: lab-test-runner
+    namespace: welcome

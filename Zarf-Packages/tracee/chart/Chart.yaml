@@ -1,0 +1,9 @@
+apiVersion: v2
+appVersion: 0.24.1
+description: Linux Runtime Security and Forensics using eBPF
+home: https://aquasecurity.github.io/tracee/v0.24.1/
+name: tracee
+sources:
+- https://github.com/aquasecurity/tracee
+type: application
+version: 0.24.1

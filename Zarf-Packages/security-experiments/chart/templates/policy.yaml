@@ -1,0 +1,103 @@
+# Baseline policy:
+# - frontend -> backend:8080 is intended application traffic
+# - frontend -> kube-dns:53 is infrastructure traffic required for service discovery
+# - attacker -> victim-a:8080 is intended
+# - attacker -> kube-apiserver supports Service-account credential access
+#   and Unauthorized pod creation
+# - attacker -> kube-dns:53 is infrastructure traffic
+# - attacker -> victim-b is intentionally NOT declared
+
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: experiment-frontend-intent
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app: frontend
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Infrastructure dependency required for Kubernetes service discovery.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: security-experiment-attacker-intent
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app: attacker
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Cross-service access attempt: allow the declared victim-a dependency.
+    - toEndpoints:
+        - matchLabels:
+            app: victim-a
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Kubernetes API access for Service-account credential access
+    # and Unauthorized pod creation.
+    - toEntities:
+        - kube-apiserver
+
+    # Infrastructure dependency required for Kubernetes service discovery.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: experiment-authorized-client-intent
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector:
+    matchLabels: {app: authorized-client}
+  egress:
+    - toEntities: [kube-apiserver]
+    - toEndpoints:
+        - matchLabels: {"k8s:io.kubernetes.pod.namespace": kube-system, "k8s:k8s-app": kube-dns}
+      toPorts:
+        - ports: [{port: "53", protocol: UDP}, {port: "53", protocol: TCP}]
+    - toEndpoints:
+        - matchLabels: {security.test.workload/fanout: "true"}
+      toPorts:
+        - ports: [{port: "8080", protocol: TCP}]

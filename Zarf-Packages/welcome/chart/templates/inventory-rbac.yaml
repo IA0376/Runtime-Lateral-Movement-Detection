@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: welcome-inventory}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: {name: welcome-inventory}
+rules:
+  - apiGroups: ['']
+    resources: [nodes, pods, services]
+    verbs: [list]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [httproutes]
+    verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: {name: welcome-inventory}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: welcome-inventory}
+subjects:
+  - kind: ServiceAccount
+    name: welcome-inventory
+    namespace: {{ .Release.Namespace }}

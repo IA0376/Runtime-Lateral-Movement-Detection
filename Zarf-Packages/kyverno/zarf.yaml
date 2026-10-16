@@ -1,0 +1,32 @@
+kind: ZarfPackageConfig
+metadata:
+    name: kyverno
+    version: 1.0.0
+components:
+    - name: kyverno
+      required: true
+      charts:
+        - name: kyverno
+          namespace: kyverno
+          url: https://kyverno.github.io/kyverno
+          repoName: kyverno
+          version: 3.9.1
+          valuesFiles:
+            - values/kyverno-values.yaml
+    - name: kyverno-images
+      required: false
+      images:
+        - ghcr.io/kyverno/readiness-checker:v1.19.1
+        - reg.kyverno.io/kyverno/background-controller:v1.19.1
+        - reg.kyverno.io/kyverno/cleanup-controller:v1.19.1
+        - reg.kyverno.io/kyverno/kyverno-cli:v1.19.1
+        - reg.kyverno.io/kyverno/kyverno:v1.19.1
+        - reg.kyverno.io/kyverno/kyvernopre:v1.19.1
+        - reg.kyverno.io/kyverno/reports-controller:v1.19.1
+        - ghcr.io/kyverno/readiness-checker:sha256-31bb42ce7f5b2e27c1cf633aeff4f0cad1f5bb63761e2cb09f0e25cdd26572bf.att
+        - reg.kyverno.io/kyverno/background-controller:sha256-8f1e9143373a27578cafc2d28d2c66ba0926c63b4c77e63de8d2fdd4a122859f.att
+        - reg.kyverno.io/kyverno/cleanup-controller:sha256-67a48e62a8d8f8120c86914ff822b90017c54054c7b64ef8a1555645e9d9761e.att
+        - reg.kyverno.io/kyverno/kyverno-cli:sha256-ced7b2be0b04250cabfe695f15307f69eb715fe23234816388af4f3812915b2a.att
+        - reg.kyverno.io/kyverno/kyverno:sha256-b31d8511ae5fd6010e2a01ea72ebae08eb82fa51d91af14a1d9fe989949b4edb.att
+        - reg.kyverno.io/kyverno/kyvernopre:sha256-c25c47461f06f2845a48c319ae86fbbc1730a7b9ed5b701889c9dc1f9ee94b09.att
+        - reg.kyverno.io/kyverno/reports-controller:sha256-c0eee97b9b44a0dd35805d56b358fa52548480f79d4944602b9609538eccd64c.att

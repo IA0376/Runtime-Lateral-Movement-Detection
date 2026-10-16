@@ -1,0 +1,29 @@
+kind: ZarfPackageConfig
+metadata:
+  name: kubearmor
+  version: 1.0.0
+  architecture: amd64
+components:
+  - name: kubearmor-namespace
+    required: true
+    manifests:
+      - name: namespace
+        files: [manifests/namespace.yaml]
+  - name: kubearmor
+    required: true
+    charts:
+      - name: kubearmor
+        namespace: kubearmor
+        version: v1.7.4
+        localPath: chart
+        valuesFiles: [values.yaml]
+    images:
+      - docker.io/kubearmor/kubearmor:v1.7.4@sha256:a081413110451b9f06433ce43cbe11ad069d9f861a5223c6eaf58b414e78ca8c
+      - docker.io/kubearmor/kubearmor-init:v1.7.4@sha256:236ade6e67b18bb6b03ea1c642765b3a06c4e7f20624babdd9b7c3b139ea4fc8
+      - docker.io/kubearmor/kubearmor-relay-server:latest@sha256:2dd4809d7c111565210d8b60a03f8bbc6b6044780771b5e0d5c35cb7a5413e26
+      - docker.io/kubearmor/kubearmor-controller:latest@sha256:923b467408a8f44e602f9bbeac8ab9bc3bb230be0f5ecc94c811d3e12e844bd1
+  - name: experiment-audit
+    required: true
+    manifests:
+      - name: audit-policies
+        files: [manifests/experiment-audit.yaml]

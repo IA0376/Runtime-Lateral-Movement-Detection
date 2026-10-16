@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: experiment-require-runtime-default}
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: experiment-pod-security
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaces: [security-test-helm, security-test-gitops]
+    validate:
+      message: Experiment pods must run non-root with RuntimeDefault seccomp.
+      pattern:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile: {type: RuntimeDefault}

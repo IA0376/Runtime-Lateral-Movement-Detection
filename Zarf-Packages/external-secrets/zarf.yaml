@@ -1,0 +1,29 @@
+kind: ZarfPackageConfig
+metadata:
+    name: external-secrets
+    version: 1.0.0
+components:
+    - name: external-secrets
+      required: true
+      charts:
+        - name: external-secrets
+          namespace: external-secrets
+          url: https://charts.external-secrets.io
+          repoName: external-secrets
+          version: 2.10.0
+          valuesFiles:
+            - values/external-secrets-input-values.yaml
+    - name: external-secrets-resources
+      required: true
+      manifests:
+        - noWait: true
+          name: external-secrets-resources-appset
+          namespace: external-secrets
+          files:
+            - manifests/external-secrets-resources.yaml
+    - name: external-secrets-images
+      required: false
+      images:
+        - ghcr.io/external-secrets/external-secrets:v2.10.0
+        - ghcr.io/external-secrets/external-secrets:sha256-814117b0fd6d121b03e8ba3b6db1cecbe7449a354fc0fc9c4faf73a37aa221b1.sig
+        - ghcr.io/external-secrets/external-secrets:sha256-814117b0fd6d121b03e8ba3b6db1cecbe7449a354fc0fc9c4faf73a37aa221b1.att

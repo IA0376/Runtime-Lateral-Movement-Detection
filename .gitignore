@@ -1,0 +1,43 @@
+bin/
+__pycache__
+*.tar*
+*.iso
+*.zip
+
+go.sum
+
+
+generated/
+
+# Talos
+
+_out/
+bin/
+# Keep private PKI material out of source control.
+pki/*.key
+pki/*.pem
+!pki/*.crt
+
+#--------------------------
+# Talos binaries for iPXE 
+# containers/pxe/http/talos
+#--------------------------
+cmdline-metal-amd64
+initramfs-amd64.cpio
+kernel-amd64
+metal-amd64-uki.efi
+
+# Tests
+results/
+telemetry/
+
+security-lab-bash-tests/
+
+*.key
+.env
+!**/go.sum
+
+*.docx
+
+# Provisioner root CA; obtained at deploy time by scripts/fetch-lab-ca.sh
+lab-internal-root-ca.crt

@@ -1,0 +1,6 @@
+dependencies:
+- name: web-access
+  repository: ""
+  version: 0.1.0
+digest: sha256:5065b7ecf5be64089be28871421d57432f155e42ec4b1182ac7bfccf982435bd
+generated: "2026-10-04T17:28:16.048296404Z"

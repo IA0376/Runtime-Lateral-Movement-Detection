@@ -1,0 +1,15 @@
+# Longhorn V2 uses the raw r-longhorn partition registered by Talos node labels.
+# The 2048 MiB engine allocation matches the Talos hugepage reservation.
+{platform: {podSecurity: {enabled: true, enforce: privileged, audit: privileged, warn: privileged}}, service: {ui: {type: ClusterIP}}, persistence: {
+    createStorageClass: true,
+    defaultClass: true,
+    defaultFsType: ext4,
+    defaultClassReplicaCount: 3,
+    dataEngine: v2}, defaultSettings: {logPath: /var/mnt/longhorn-logs, # Need to match the name of the UserVolumes
+    storageReservedPercentageForDefaultDisk: 0,
+    storageMinimalAvailablePercentage: 10,
+    storageOverProvisioningPercentage: 100,
+    defaultReplicaCount: 3,
+    v1DataEngine: false, v2DataEngine: true,
+    createDefaultDiskLabeledNodes: true,
+    dataEngineHugepageEnabled: '{"v2":"true"}', dataEngineMemorySize: '{"v2":"2048"}'}, "longhornUI": {"nodeSelector": {"kubernetes.io/hostname": "cp-node-02"}}, "longhornDriver": {"nodeSelector": {"kubernetes.io/hostname": "cp-node-02"}}}

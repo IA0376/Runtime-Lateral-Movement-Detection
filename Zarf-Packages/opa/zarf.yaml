@@ -1,0 +1,21 @@
+kind: ZarfPackageConfig
+metadata:
+    name: opa
+    version: 1.0.0
+components:
+    - name: opa
+      required: true
+      charts:
+        - name: gatekeeper
+          namespace: gatekeeper-system
+          url: https://open-policy-agent.github.io/gatekeeper/charts
+          repoName: gatekeeper
+          version: v3.23.1
+          valuesFiles:
+            - values/gatekeeper-values.yaml
+    - name: opa-images
+      required: false
+      images:
+        - docker.io/curlimages/curl:8.20.0
+        - docker.io/openpolicyagent/gatekeeper-crds:v3.23.1
+        - docker.io/openpolicyagent/gatekeeper:v3.23.1

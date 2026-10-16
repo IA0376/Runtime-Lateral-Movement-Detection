@@ -1,0 +1,131 @@
+kind: ZarfPackageConfig
+metadata:
+  name: gitops
+  version: 1.0.0
+  description: Bootstrap GitOps platform (Gitea + Argo CD + App-of-Apps)
+variables:
+  - default: admin
+    description: Gitea administrator username
+    name: GITEA_ADMIN_USERNAME
+    prompt: true
+  - description: Gitea administrator password
+    name: GITEA_ADMIN_PASSWORD
+    prompt: true
+    sensitive: true
+  - default: admin
+    description: Gitea service account used by Argo CD
+    name: GITEA_ARGOCD_USERNAME
+    prompt: true
+  - description: Password for the Gitea Argo CD service account
+    name: GITEA_ARGOCD_PASSWORD
+    prompt: true
+    sensitive: true
+  - description: Argo CD administrator password
+    name: ARGOCD_ADMIN_PASSWORD_HASH
+    prompt: true
+    sensitive: true
+components:
+  # 01 - Namespace security + generic secrets
+  - name: gitops-prerequisites
+    required: true
+    manifests:
+      - name: gitea-namespace-security
+        namespace: gitea
+        files:
+          - manifests/gitea-namespace-security.yaml
+      - name: argocd-namespace-security
+        namespace: argocd
+        files:
+          - manifests/argo-cd-namespace-security.yaml
+      - name: gitea-admin-secret
+        namespace: gitea
+        files:
+          - manifests/gitea-admin-secret.yaml
+      - name: gitea-argocd-secret
+        namespace: gitea
+        files:
+          - manifests/gitea-argocd-secret.yaml
+  # 02 - Gitea LoadBalancer IP Pool
+  - name: gitea-loadbalancer
+    required: true
+    charts:
+      - name: gitea-load-balancer-pool
+        namespace: gitea
+        localPath: charts/cilium-load-balancer-pool
+        version: 0.1.0
+        valuesFiles:
+          - values/gitea-load-balancer-pool-values.yaml
+  # 03 - Gitea
+  - name: gitea
+    required: true
+    charts:
+      - name: gitea
+        namespace: gitea
+        url: https://dl.gitea.com/charts/
+        repoName: gitea
+        version: 12.7.0
+        valuesFiles:
+          - values/gitea-input-values.yaml
+  # 04 - Argo CD LoadBalancer IP Pool
+  - name: argocd-loadbalancer
+    required: true
+    charts:
+      - name: argo-cd-load-balancer-pool
+        namespace: argocd
+        localPath: charts/cilium-load-balancer-pool
+        version: 0.1.0
+        valuesFiles:
+          - values/argo-cd-load-balancer-pool-values.yaml
+  # 05 - Argo CD
+  - name: argocd
+    required: true
+    charts:
+      - name: argo-cd
+        namespace: argocd
+        url: https://argoproj.github.io/argo-helm
+        repoName: argo-cd
+        version: 10.9.1
+        valuesFiles:
+          - values/argo-cd-input-values.yaml
+  # 06 - Bootstrap Gitea (Org, Users, Repository)
+  - name: gitea-bootstrap
+    required: true
+    manifests:
+      - name: gitea-bootstrap-job
+        namespace: gitea
+        files:
+          - manifests/gitea-bootstrap-job.yaml
+  # 08 - Configure Argo CD (Project + Repository)
+  - name: argocd-bootstrap
+    required: true
+    manifests:
+      - name: infrastructure-project
+        namespace: argocd
+        files:
+          - manifests/argocd-project.yaml
+      - name: infrastructure-repository
+        namespace: argocd
+        files:
+          - manifests/argocd-repository.yaml
+  # 09 - Root App-of-Apps
+  - name: infrastructure-root-application
+    required: true
+    manifests:
+      - name: infrastructure-root-application
+        namespace: argocd
+        files:
+          - manifests/root-application.yaml
+  # 10 - Images (mirrored by Zarf)
+  - name: gitops-images
+    required: false
+    images:
+      - docker.io/library/busybox:latest
+      - docker.gitea.com/gitea:1.27.0-rootless
+      - docker.io/bitnamilegacy/postgresql:17.6.0-debian-12-r4
+      - docker.io/bitnamilegacy/valkey-cluster:8.1.3-debian-12-r3
+      - docker.io/curlimages/curl:8.16.0
+      - docker.io/alpine/git:2.52.0
+      - docker.io/library/redis:8.6.4-alpine
+      - ecr-public.aws.com/docker/library/redis:8.6.4-alpine
+      - quay.io/argoproj/argocd:v3.5.3
+      - quay.io/argoproj/argocd:sha256-dd3f47d5a5e4da563a7a398506e892481b358a7cec50abdf320c71aa55904bfa.att

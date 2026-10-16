@@ -1,0 +1,44 @@
+driver:
+  enabled: true
+  kind: modern_ebpf
+falco:
+  config_files: []
+
+  http_output:
+    enabled: false
+
+  json_include_output_property: true
+  json_include_tags_property: true
+  json_output: true
+
+  stdout_output:
+    enabled: true
+
+falcoctl:
+  artifact:
+    follow:
+      enabled: false
+    install:
+      enabled: false
+
+falcosidekick:
+  enabled: false
+
+customRules:
+  security-experiments.yaml: |-
+    - list: experiment_shells
+      items: [sh, bash, ash]
+
+    - rule: Experiment Shell Spawn
+      desc: Shell spawned in an experiment workload
+      condition: spawned_process and container and proc.name in (experiment_shells) and k8s.ns.name startswith "security-test-"
+      output: "experiment shell ns=%k8s.ns.name pod=%k8s.pod.name container=%container.name process=%proc.name command=%proc.cmdline exe_flags=%evt.arg.flags"
+      priority: WARNING
+      tags: [security-experiment, lateral-movement]
+
+    - rule: Experiment Service Account Credential Read
+      desc: Process accesses the mounted Kubernetes service account credential path
+      condition: open_read and container and fd.name startswith /var/run/secrets/kubernetes.io/serviceaccount/ and k8s.ns.name startswith "security-test-"
+      output: "experiment service-account access ns=%k8s.ns.name pod=%k8s.pod.name process=%proc.name file=%fd.name"
+      priority: WARNING
+      tags: [security-experiment, credential-access]

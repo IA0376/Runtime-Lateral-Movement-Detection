@@ -1,0 +1,19 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata: {name: k8sexperimentlabel}
+spec:
+  crd:
+    spec:
+      names: {kind: K8sExperimentLabel}
+      validation:
+        openAPIV3Schema: {type: object, properties: {}}
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8sexperimentlabel
+      violation[{"msg": msg}] {
+        input.review.kind.kind == "Pod"
+        startswith(input.review.object.metadata.namespace, "security-test-")
+        not input.review.object.metadata.labels["security.test.workload/experiment"]
+        msg := "experiment pods must carry security.test.workload/experiment"
+      }

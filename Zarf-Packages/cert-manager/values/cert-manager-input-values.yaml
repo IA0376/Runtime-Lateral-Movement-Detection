@@ -1,0 +1,43 @@
+acmesolver:
+  image:
+    repository: quay.io/jetstack/cert-manager-acmesolver
+cainjector:
+  image:
+    repository: quay.io/jetstack/cert-manager-cainjector
+  replicaCount: 2
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02
+crds:
+  enabled: true
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+replicaCount: 2
+startupapicheck:
+  image:
+    repository: quay.io/jetstack/cert-manager-startupapicheck
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+webhook:
+  image:
+    repository: quay.io/jetstack/cert-manager-webhook
+  replicaCount: 2
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    kubernetes.io/hostname: cp-node-02
+nodeSelector:
+  kubernetes.io/hostname: cp-node-02

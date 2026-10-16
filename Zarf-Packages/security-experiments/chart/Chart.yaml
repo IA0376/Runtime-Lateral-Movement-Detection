@@ -1,0 +1,4 @@
+apiVersion: v2
+name: security-experiment
+version: 0.1.0
+description: Identical namespace-scoped workloads for Helm and Argo CD experiments

@@ -1,0 +1,88 @@
+{{- $name := printf "%s-sensor-readiness" .Release.Namespace }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: experiment-readiness
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-3"
+    helm.sh/hook-delete-policy: before-hook-creation
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "-3"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-3"
+    helm.sh/hook-delete-policy: before-hook-creation
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "-3"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+rules:
+  - apiGroups: [apps]
+    resources: [daemonsets, deployments]
+    resourceNames: [falco, tetragon, hubble-relay, tracee, kubearmor]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-2"
+    helm.sh/hook-delete-policy: before-hook-creation
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: {{ $name }}}
+subjects:
+  - kind: ServiceAccount
+    name: experiment-readiness
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: experiment-sensor-readiness
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-1"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {security.test.workload/experiment: "true"}
+    spec:
+      serviceAccountName: experiment-readiness
+      restartPolicy: Never
+      nodeSelector: {security-experiments.io/target: "true"}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: readiness
+          image: {{ .Values.readinessImage }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          env: [{name: HOME, value: /tmp}]
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+          command:
+            - bash
+            - -ec
+            - |
+              kubectl -n falco rollout status daemonset/falco --timeout=240s
+              kubectl -n kube-system rollout status daemonset/tetragon --timeout=240s
+              kubectl -n kube-system rollout status deployment/hubble-relay --timeout=240s
+              kubectl -n tracee rollout status daemonset/tracee --timeout=240s
+              kubectl -n kubearmor rollout status daemonset/kubearmor --timeout=240s
+      volumes: [{name: tmp, emptyDir: {}}]

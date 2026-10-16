@@ -1,0 +1,54 @@
+---
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: experiment-shell-and-credential-audit
+  namespace: security-test-helm
+spec:
+  selector:
+    matchLabels:
+      security.test.workload/experiment: "true"
+  severity: 5
+  action: Audit
+  process:
+    matchPaths:
+      - path: /bin/sh
+      - path: /usr/bin/sh
+      - path: /bin/bash
+      # BusyBox resolves shell applets to this executable; this intentionally
+      # broad rule is scored on benign controls as well.
+      - path: /bin/busybox
+      - path: /usr/bin/busybox
+  file:
+    matchDirectories:
+      - dir: /var/run/secrets/kubernetes.io/serviceaccount/
+        recursive: true
+      - dir: /run/secrets/kubernetes.io/serviceaccount/
+        recursive: true
+---
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: experiment-shell-and-credential-audit
+  namespace: security-test-gitops
+spec:
+  selector:
+    matchLabels:
+      security.test.workload/experiment: "true"
+  severity: 5
+  action: Audit
+  process:
+    matchPaths:
+      - path: /bin/sh
+      - path: /usr/bin/sh
+      - path: /bin/bash
+      # BusyBox resolves shell applets to this executable; this intentionally
+      # broad rule is scored on benign controls as well.
+      - path: /bin/busybox
+      - path: /usr/bin/busybox
+  file:
+    matchDirectories:
+      - dir: /var/run/secrets/kubernetes.io/serviceaccount/
+        recursive: true
+      - dir: /run/secrets/kubernetes.io/serviceaccount/
+        recursive: true

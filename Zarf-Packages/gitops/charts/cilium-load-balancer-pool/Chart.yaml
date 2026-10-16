@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cilium-load-balancer-pool
+description: Reusable application-specific Cilium LoadBalancer IP pool
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

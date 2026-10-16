@@ -1,0 +1,88 @@
+global:
+    tlsDisable: false
+injector:
+    enabled: false
+server:
+    dataStorage:
+        enabled: true
+        size: 10Gi
+        storageClass: longhorn
+    extraEnvironmentVars:
+        BAO_CACERT: /openbao/tls/ca.crt
+        BAO_TLS_SERVER_NAME: openbao.openbao.svc
+    ha:
+        apiAddr: https://$(BAO_K8S_POD_NAME).openbao-internal.openbao.svc:8200
+        disruptionBudget:
+            enabled: true
+            maxUnavailable: 1
+        enabled: true
+        raft:
+            config: |
+                ui = true
+                disable_mlock = true
+                listener "tcp" {
+                  address = "[::]:8200"
+                  cluster_address = "[::]:8201"
+                  tls_cert_file = "/openbao/tls/tls.crt"
+                  tls_key_file = "/openbao/tls/tls.key"
+                }
+                storage "raft" {
+                  path = "/openbao/data"
+                  retry_join {
+                    leader_api_addr = "https://openbao-0.openbao-internal:8200"
+                    leader_ca_cert_file = "/openbao/tls/ca.crt"
+                    leader_tls_servername = "openbao.openbao.svc"
+                  }
+                  retry_join {
+                    leader_api_addr = "https://openbao-1.openbao-internal:8200"
+                    leader_ca_cert_file = "/openbao/tls/ca.crt"
+                    leader_tls_servername = "openbao.openbao.svc"
+                  }
+                  retry_join {
+                    leader_api_addr = "https://openbao-2.openbao-internal:8200"
+                    leader_ca_cert_file = "/openbao/tls/ca.crt"
+                    leader_tls_servername = "openbao.openbao.svc"
+                  }
+                }
+                seal "static" {
+                  current_key_id = "lab-1"
+                  current_key = "file:///openbao/seal/key"
+                }
+                service_registration "kubernetes" {}
+            enabled: true
+            setNodeId: true
+        replicas: 3
+    image:
+        tag: 2.6.2
+    persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Retain
+        whenScaled: Retain
+    podManagementPolicy: Parallel
+    resources:
+        limits:
+            memory: 1Gi
+        requests:
+            cpu: 250m
+            memory: 256Mi
+    standalone:
+        enabled: false
+    tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    updateStrategyType: OnDelete
+    volumeMounts:
+        - mountPath: /openbao/tls
+          name: tls
+          readOnly: true
+        - mountPath: /openbao/seal
+          name: seal
+          readOnly: true
+    volumes:
+        - name: tls
+          secret:
+            secretName: openbao-tls
+        - name: seal
+          secret:
+            defaultMode: 288
+            secretName: openbao-unseal

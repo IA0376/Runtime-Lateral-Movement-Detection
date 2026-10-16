@@ -1,0 +1,6 @@
+"controllerManager":
+  "nodeSelector":
+    "kubernetes.io/hostname": "cp-node-03"
+"audit":
+  "nodeSelector":
+    "kubernetes.io/hostname": "cp-node-03"

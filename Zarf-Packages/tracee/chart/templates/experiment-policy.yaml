@@ -1,0 +1,12 @@
+apiVersion: tracee.aquasec.com/v1beta1
+kind: Policy
+metadata:
+  name: experiment-shell-observation
+  annotations:
+    description: Fixed shell-execution comparator rule; authorised shells remain false positives.
+spec:
+  scope:
+    - container
+    - comm=sh,bash,dash
+  rules:
+    - event: sched_process_exec
